@@ -12,6 +12,13 @@
 
 Refer to the [AWS IAM User Configuration](./IAM.md) for more information on how to configure your AWS credentials.
 
+## Clone the repository
+
+```bash
+$ git clone https://github.com/darklight147/kubernetes-the-easier-way.git
+$ cd kubernetes-the-easier-way
+```
+
 ## Infrastructure preparation
 
 ### Create a new S3 bucket
@@ -57,13 +64,6 @@ Finally, here is the structure of the project you just ended up with:
 ```
 
 ## Usage
-
-1. Clone the repository
-
-```bash
-$ git clone https://github.com/darklight147/kubernetes-the-easy-way.git
-$ cd kubernetes-the-easy-way
-```
 
 2. Initialize Terraform
 
