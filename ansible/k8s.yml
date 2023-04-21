@@ -1,0 +1,152 @@
+---
+- name: Install Kubernetes on Ubuntu and deploy Nginx
+  hosts: all
+  become: true
+  become_user: root
+  tasks:
+    - name: Add Kubernetes apt repository key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Add Kubernetes apt repository
+      apt_repository:
+        repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+
+    - name: Install Kubernetes components
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: true
+      when: inventory_hostname == groups['master'][0] or inventory_hostname == groups['worker'][0]
+
+    - name: Configure Docker cgroup driver
+      copy:
+        content: |
+          {
+            "exec-opts": ["native.cgroupdriver=systemd"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "100m"
+            },
+            "storage-driver": "overlay2"
+          }
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: 0644
+      when: inventory_hostname == groups['master'][0] or inventory_hostname == groups['worker'][0]
+
+    - name: Restart Docker
+      systemd:
+        name: docker
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
+      when: inventory_hostname == groups['master'][0] or inventory_hostname == groups['worker'][0]
+
+    - name: Initialize Kubernetes control plane
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      args:
+        creates: /etc/kubernetes/admin.conf
+      when: inventory_hostname == groups['master'][0]
+
+    - name: Setup kubeconfig for root user
+      become_user: root
+      block:
+        - name: Create .kube directory
+          file:
+            path: /root/.kube
+            state: directory
+
+        - name: Copy admin.conf to /root/.kube/config
+          copy:
+            src: /etc/kubernetes/admin.conf
+            dest: /root/.kube/config
+            owner: root
+            group: root
+            mode: 0644
+            remote_src: yes
+      when: inventory_hostname == groups['master'][0]
+
+    - name: Setup kubeconfig for ubuntu user
+      become_user: root
+      block:
+        - name: Create .kube directory
+          file:
+            path: /home/ubuntu/.kube
+            state: directory
+
+        - name: Copy admin.conf to /home/ubuntu/.kube/config
+          copy:
+            src: /etc/kubernetes/admin.conf
+            dest: /home/ubuntu/.kube/config
+            owner: ubuntu
+            group: ubuntu
+            mode: 0644
+            remote_src: yes
+      when: inventory_hostname == groups['master'][0]
+
+    - name: Install Flannel network plugin
+      command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+      when: inventory_hostname == groups['master'][0]
+
+- name: Join worker nodes to Kubernetes cluster and deploy Nginx
+  hosts: worker
+  become: true
+  tasks:
+    - name: Get join command from master
+      become_user: root
+      shell: kubeadm token create --print-join-command
+      register: join_command
+      changed_when: False
+      delegate_to: "{{ groups['master'][0] }}"
+
+    - name: Join the cluster
+      command: "{{ join_command.stdout }}"
+      args:
+        creates: /etc/kubernetes/kubelet.conf
+
+- name: Deploy Nginx
+  hosts: master
+  become_user: ubuntu
+  tasks:
+    - name: Deploy Nginx container
+      copy:
+        content: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: nginx-deployment
+            labels:
+              app: nginx
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: nginx
+            template:
+              metadata:
+                labels:
+                  app: nginx
+              spec:
+                containers:
+                - name: nginx
+                  image: nginx:latest
+                  ports:
+                  - containerPort: 80
+        dest: $HOME/nginx-deployment.yaml
+
+    - name: Apply Nginx deployment
+      command: kubectl apply -f $HOME/nginx-deployment.yaml
