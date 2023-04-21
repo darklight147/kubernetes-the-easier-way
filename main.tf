@@ -143,7 +143,7 @@ data "aws_ami" "canonical" {
 
 resource "aws_instance" "master" {
   ami                         = data.aws_ami.canonical.id
-  instance_type               = "t3.medium"
+  instance_type               = var.intance_size
   key_name                    = aws_key_pair.demo-key.key_name
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.public_subnet.id
@@ -161,7 +161,7 @@ resource "aws_instance" "master" {
 
 resource "aws_instance" "slave" {
   ami                         = data.aws_ami.canonical.id
-  instance_type               = "t3.medium"
+  instance_type               = var.intance_size
   key_name                    = aws_key_pair.demo-key.key_name
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.public_subnet.id
