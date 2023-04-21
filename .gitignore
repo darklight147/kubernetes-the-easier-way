@@ -34,3 +34,7 @@ override.tf.json
 terraform.rc
 
 *.retry
+
+*.pem
+
+*.ini
