@@ -1,5 +1,7 @@
 # Kubernetes Cluster with Terraform and Ansible on AWS with Kubeadm
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=darklight147_kubernetes-the-easy-way&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=darklight147_kubernetes-the-easy-way)
+
 ### Skaffold a full Kubernetes Cluster with nothing but Terraform and ansible, and deploy a sample application on it.
 
 ## Prerequisites
