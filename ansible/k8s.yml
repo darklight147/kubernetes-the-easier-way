@@ -57,7 +57,7 @@
       when: inventory_hostname == groups['master'][0] or inventory_hostname == groups['worker'][0]
 
     - name: Initialize Kubernetes control plane
-      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint={{ groups['master'][0] }} --apiserver-cert-extra-sans={{ groups['master'][0] }}
       args:
         creates: /etc/kubernetes/admin.conf
       when: inventory_hostname == groups['master'][0]
