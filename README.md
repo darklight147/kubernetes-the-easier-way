@@ -1,3 +1,8 @@
+![image](https://github.com/darklight147/kubernetes-the-easier-way/assets/39389636/b413e9bf-37cd-4af5-bb7b-9388dc5606a7)
+
+
+
+
 # Kubernetes Cluster with Terraform and Ansible on AWS with Kubeadm
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=darklight147_kubernetes-the-easy-way&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=darklight147_kubernetes-the-easy-way)
