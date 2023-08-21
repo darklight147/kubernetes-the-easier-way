@@ -40,3 +40,4 @@ terraform.rc
 *.pem
 
 *.ini
+.DS_Store

@@ -29,7 +29,6 @@
         name: docker.io
         state: present
         update_cache: true
-      when: inventory_hostname == groups['master'][0] or inventory_hostname == groups['worker'][0]
 
     - name: Configure Docker cgroup driver
       copy:
@@ -46,7 +45,6 @@
         owner: root
         group: root
         mode: 0644
-      when: inventory_hostname == groups['master'][0] or inventory_hostname == groups['worker'][0]
 
     - name: Restart Docker
       systemd:
@@ -54,7 +52,6 @@
         state: restarted
         enabled: yes
         daemon_reload: yes
-      when: inventory_hostname == groups['master'][0] or inventory_hostname == groups['worker'][0]
 
     - name: Initialize Kubernetes control plane
       command: kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint={{ groups['master'][0] }} --apiserver-cert-extra-sans={{ groups['master'][0] }}
@@ -110,7 +107,7 @@
       become_user: root
       shell: kubeadm token create --print-join-command
       register: join_command
-      changed_when: False
+      changed_when: true
       delegate_to: "{{ groups['master'][0] }}"
 
     - name: Join the cluster
@@ -123,6 +120,7 @@
   become_user: ubuntu
   tasks:
     - name: Deploy Nginx container
+      when: inventory_hostname == groups['master'][0]
       copy:
         content: |
           apiVersion: apps/v1
@@ -150,3 +148,4 @@
 
     - name: Apply Nginx deployment
       command: kubectl apply -f $HOME/nginx-deployment.yaml
+      when: inventory_hostname == groups['master'][0]
