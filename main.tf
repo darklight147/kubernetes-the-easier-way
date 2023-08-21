@@ -167,6 +167,8 @@ resource "aws_instance" "slave" {
   subnet_id                   = aws_subnet.public_subnet.id
   vpc_security_group_ids      = [aws_security_group.sg.id]
 
+  count = var.slave_count
+
   provisioner "local-exec" {
     command = "until nc -z -v -w30 ${self.public_ip} 22; do echo Waiting for SSH connection...; sleep 5; done; sleep 30"
   }
@@ -183,7 +185,7 @@ resource "local_file" "ansible_inventory" {
 ${aws_instance.master.public_ip}
 
 [worker]
-${aws_instance.slave.public_ip}
+${join("\n", aws_instance.slave.*.public_ip)}
 EOF
 
   filename = "ansible/ansible-inventory.ini"
